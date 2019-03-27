@@ -1,39 +1,6 @@
 (ns xml-lib.core
   (:require [clojure.string :as cstring]))
 
-(def doctype-string
-     "<!DOCTYPE html>\n")
-
-(defn remove-doctype
-  "Removes doctype from string"
-  [html-string]
-  (when (and html-string
-             (string?
-               html-string)
-             (not
-               (cstring/blank?
-                 html-string))
-         )
-    (let [index-of-doctype (cstring/index-of
-                             html-string
-                             doctype-string)]
-      (if index-of-doctype
-        (let [doctype-length (count
-                               doctype-string)
-              removed-doctype-part1 (.substring
-                                      html-string
-                                      0
-                                      index-of-doctype)
-              removed-doctype-part2 (.substring
-                                      html-string
-                                      (+ index-of-doctype
-                                         doctype-length))]
-          (str
-            removed-doctype-part1
-            removed-doctype-part2))
-        html-string))
-   ))
-
 (defn find-open-tag
   "Finds open tag"
   [html-string]
@@ -201,11 +168,9 @@
                  (cstring/blank?
                    string-to-parse))
            )
-      (let [removed-doctype (remove-doctype
-                              string-to-parse)
-            [open-tag
+      (let [[open-tag
              removed-open-tag] (find-open-tag
-                                 removed-doctype)
+                                 string-to-parse)
             open-tag (if open-tag
                        (let [[tag-name
                               parsed-attributes] (parse-tag-attributes
@@ -309,13 +274,38 @@
      )
     @html-string-a))
 
+(defn html-parse-in-vector
+  "Parse HTML in vector"
+  [html-string]
+  (let [html-string-a (atom
+                        html-string)
+        html-parsed-to-vector (atom [])]
+    (while (and @html-string-a
+                (string?
+                  @html-string-a)
+                (not
+                  (cstring/blank?
+                    @html-string-a))
+            )
+      (let [[parsed-content
+             after-tag] (html-parse-recur
+                          @html-string-a)]
+        (swap!
+          html-parsed-to-vector
+          conj
+          parsed-content)
+        (reset!
+          html-string-a
+          after-tag))
+     )
+    @html-parsed-to-vector))
+
 (defn html-parse
   "Parses XML string into clojure map"
   [html-string]
   (let [html-string (remove-comments
                       html-string)
-        [parsed-xml-map
-         _] (html-parse-recur
-              html-string)]
-    parsed-xml-map))
+        parsed-xml-vector (html-parse-in-vector
+                            html-string)]
+    parsed-xml-vector))
 

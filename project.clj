@@ -1,4 +1,4 @@
-(defproject org.clojars.vladimirmarkovic86/xml-lib "0.1.0"
+(defproject org.clojars.vladimirmarkovic86/xml-lib "0.1.1"
   :description "XML library"
   :url "http://github.com/VladimirMarkovic86/xml-lib"
   :license {:name "Eclipse Public License"

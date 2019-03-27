@@ -3,101 +3,6 @@
             [xml-lib.core :refer :all]
             [clojure.string :as cstring]))
 
-(deftest test-remove-doctype
-  
-  (testing "Test remove doctype"
-    
-    (let [string-to-parse nil
-          removed-doctype (remove-doctype
-                            string-to-parse)]
-      
-      (is
-        (nil?
-          removed-doctype)
-       )
-      
-     )
-    
-    (let [string-to-parse ""
-          removed-doctype (remove-doctype
-                            string-to-parse)]
-      
-      (is
-        (nil?
-          removed-doctype)
-       )
-      
-     )
-    
-    (let [string-to-parse (str
-                            "<!DOCTYPE html>\n"
-                            "<html>\n"
-                            "  <head>\n"
-                            "    <meta charset=\"utf-8\">\n"
-                            "    <title>Clojure server</title>\n"
-                            "    <link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\" >\n"
-                            "  </head>\n"
-                            "  <body>\n"
-                            "    <h2>Clojure server is running</h2>\n"
-                            "  </body>\n"
-                            "</html>")
-          removed-doctype (remove-doctype
-                            string-to-parse)]
-      
-      (is
-        (= removed-doctype
-           (str
-             "<html>\n"
-             "  <head>\n"
-             "    <meta charset=\"utf-8\">\n"
-             "    <title>Clojure server</title>\n"
-             "    <link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\" >\n"
-             "  </head>\n"
-             "  <body>\n"
-             "    <h2>Clojure server is running</h2>\n"
-             "  </body>\n"
-             "</html>")
-           )
-       )
-      
-     )
-    
-    (let [string-to-parse (str
-                            "<html>\n"
-                            "  <head>\n"
-                            "    <meta charset=\"utf-8\">\n"
-                            "    <title>Clojure server</title>\n"
-                            "    <link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\" >\n"
-                            "  </head>\n"
-                            "  <body>\n"
-                            "    <h2>Clojure server is running</h2>\n"
-                            "  </body>\n"
-                            "</html>")
-          removed-doctype (remove-doctype
-                            string-to-parse)]
-      
-      (is
-        (= removed-doctype
-           (str
-             "<html>\n"
-             "  <head>\n"
-             "    <meta charset=\"utf-8\">\n"
-             "    <title>Clojure server</title>\n"
-             "    <link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\" >\n"
-             "  </head>\n"
-             "  <body>\n"
-             "    <h2>Clojure server is running</h2>\n"
-             "  </body>\n"
-             "</html>")
-           )
-       )
-      
-     )
-    
-   )
-  
- )
-
 (deftest test-find-open-tag
   
   (testing "Test find open tag"
@@ -587,27 +492,87 @@
                 string-to-parse)]
       
       (is
+        
         (= parsed-to-map
-           {:tag :html
-            :attrs nil
-            :content [{:tag :head
-                       :attrs nil
-                       :content [{:tag :meta
-                                  :attrs {:charset "utf-8"}}
-                                 {:tag :title
-                                  :attrs nil
-                                  :content ["Clojure server"]}
-                                 {:tag :link
-                                  :attrs {:rel "stylesheet"
-                                          :type "text/css"
-                                          :href "style.css"}}]
-                       }
-                      {:tag :body
-                       :attrs nil
-                       :content [{:tag :h2
-                                  :attrs nil
-                                  :content ["Clojure server is running"]}]}
-                      ]})
+           {:tag :!DOCTYPE, :attrs {:html nil}})
+        
+       )
+      
+     )
+    
+    (let [string-to-parse (str
+                            "<html>\n"
+                            "  <head>\n"
+                            "    <meta charset=\"utf-8\">\n"
+                            "    <title>Clojure server</title>\n"
+                            "    <link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\" >\n"
+                            "  </head>\n"
+                            "  <body>\n"
+                            "    <h2>Clojure server is running</h2>\n"
+                            "  </body>\n"
+                            "</html>")
+          [parsed-to-map
+           _] (html-parse-recur
+                string-to-parse)]
+      
+      (let [head-element (first
+                           (:content parsed-to-map))
+            title-element (get
+                            (:content head-element)
+                            1)
+            title-element-content (:content title-element)
+            title-element-content-first (first
+                                          title-element-content)]
+        
+        (is
+          (= title-element-content-first
+             "Clojure server")
+         )
+       
+       )
+      
+     )
+    
+   )
+  
+ )
+
+(deftest test-html-parse-in-vector
+  
+  (testing "Test html parse in vector"
+        
+    (let [string-to-parse (str
+                            "<!DOCTYPE html>\n"
+                            "<html>\n"
+                            "  <head>\n"
+                            "    <meta charset=\"utf-8\">\n"
+                            "    <title>Clojure server</title>\n"
+                            "    <link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\" >\n"
+                            "  </head>\n"
+                            "  <body>\n"
+                            "    <h2>Clojure server is running</h2>\n"
+                            "  </body>\n"
+                            "</html>")
+          parsed-to-vector (html-parse-in-vector
+                             string-to-parse)]
+      
+      (let [html-element (get
+                           parsed-to-vector
+                           1)
+            head-element (first
+                           (:content html-element))
+            title-element (get
+                            (:content head-element)
+                            1)
+            title-element-content (:content title-element)
+            title-element-content-first (first
+                                          title-element-content)]
+        
+        (is
+          (= title-element-content-first
+             "Clojure server")
+         )
+       
        )
       
      )
@@ -641,44 +606,163 @@
                             "    </div>\n"
                             "  </body>\n"
                             "</html>")
-          parsed-to-map (html-parse
-                          string-to-parse)]
+          parsed-to-vector (html-parse
+                             string-to-parse)]
       
-      (is
-        (= parsed-to-map
-           {:tag :html
-            :attrs nil
-            :content [{:tag :head
-                       :attrs nil
-                       :content [{:tag :meta
-                                  :attrs {:charset "utf-8"}}
-                                 {:tag :meta
-                                  :attrs {:name "viewport"
-                                          :content "width=device-width,initial-scale=1"}}
-                                 {:tag :title
-                                  :attrs nil
-                                  :content ["Sample"]}
-                                 {:tag :link
-                                  :attrs {:rel "stylesheet"
-                                          :href "//fonts.googleapis.com/css?family=Lato:100,300,400"}}
-                                 {:tag :link
-                                  :attrs {:rel "stylesheet"
-                                          :type "text/css"
-                                          :href "assets/stylesheet/base/normalize.css"}}]
-                       }
-                      {:tag :body
-                       :attrs nil
-                       :content [{:tag :div
-                                  :attrs nil
-                                  :content [{}]}
-                                 {:tag :div
-                                  :attrs nil
-                                  :content [{:tag :script
-                                             :attrs {:type "text/javascript"
-                                                     :src "assets/js/main.js"}
-                                             :content [{}]}]
-                                  }]}]
-            })
+      (let [html-element (get
+                           parsed-to-vector
+                           1)
+            head-element (first
+                           (:content html-element))
+            title-element (get
+                            (:content head-element)
+                            2)
+            title-element-content (:content title-element)
+            title-element-content-first (first
+                                          title-element-content)]
+        
+        (is
+          (= title-element-content-first
+             "Sample")
+         )
+       
+       )
+      
+     )
+    
+    (let [string-to-parse (str
+                            "<!DOCTYPE html>\n"
+                            "<!doctype html>\n"
+                            "<html>\n"
+                            "  <head>\n"
+                            "    <meta charset=\"utf-8\">\n"
+                            "    <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n"
+                            "    <title>Sample</title>\n"
+                            "    <link rel=\"stylesheet\" href=\"//fonts.googleapis.com/css?family=Lato:100,300,400\">\n"
+                            "    <link rel=\"stylesheet\" type=\"text/css\" href=\"assets/stylesheet/base/normalize.css\" >\n"
+                            "  </head>\n"
+                            "  <body>\n"
+                            "    <!-- HTML -->\n"
+                            "    <div></div>\n"
+                            "    <!-- JS -->\n"
+                            "    <div>\n"
+                            "      <script type=\"text/javascript\"\n"
+                            "              src=\"assets/js/main.js\">\n"
+                            "      </script>\n"
+                            "    </div>\n"
+                            "  </body>\n"
+                            "</html>")
+          parsed-to-vector (html-parse
+                             string-to-parse)]
+      
+      (let [html-element (get
+                           parsed-to-vector
+                           2)
+            head-element (first
+                           (:content html-element))
+            title-element (get
+                            (:content head-element)
+                            2)
+            title-element-content (:content title-element)
+            title-element-content-first (first
+                                          title-element-content)]
+        
+        (is
+          (= title-element-content-first
+             "Sample")
+         )
+       
+       )
+      
+     )
+    
+    (let [string-to-parse (str
+                            "<!DOCTYPE html><!doctype html>\n"
+                            "<html>\n"
+                            "  <head>\n"
+                            "    <meta charset=\"utf-8\">\n"
+                            "    <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n"
+                            "    <title>Sample</title>\n"
+                            "    <link rel=\"stylesheet\" href=\"//fonts.googleapis.com/css?family=Lato:100,300,400\">\n"
+                            "    <link rel=\"stylesheet\" type=\"text/css\" href=\"assets/stylesheet/base/normalize.css\" >\n"
+                            "  </head>\n"
+                            "  <body>\n"
+                            "    <!-- HTML -->\n"
+                            "    <div></div>\n"
+                            "    <!-- JS -->\n"
+                            "    <div>\n"
+                            "      <script type=\"text/javascript\"\n"
+                            "              src=\"assets/js/main.js\">\n"
+                            "      </script>\n"
+                            "    </div>\n"
+                            "  </body>\n"
+                            "</html>")
+          parsed-to-vector (html-parse
+                             string-to-parse)]
+      
+      (let [html-element (get
+                           parsed-to-vector
+                           2)
+            head-element (first
+                           (:content html-element))
+            title-element (get
+                            (:content head-element)
+                            2)
+            title-element-content (:content title-element)
+            title-element-content-first (first
+                                          title-element-content)]
+        
+        (is
+          (= title-element-content-first
+             "Sample")
+         )
+       
+       )
+      
+     )
+    
+    (let [string-to-parse (str
+                            "<?xml version="1.0" encoding=\"UTF-8\" standalone=\"no\" ?>\n"
+                            "<!DOCTYPE html><!doctype html>\n"
+                            "<html>\n"
+                            "  <head>\n"
+                            "    <meta charset=\"utf-8\">\n"
+                            "    <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n"
+                            "    <title>Sample</title>\n"
+                            "    <link rel=\"stylesheet\" href=\"//fonts.googleapis.com/css?family=Lato:100,300,400\">\n"
+                            "    <link rel=\"stylesheet\" type=\"text/css\" href=\"assets/stylesheet/base/normalize.css\" >\n"
+                            "  </head>\n"
+                            "  <body>\n"
+                            "    <!-- HTML -->\n"
+                            "    <div></div>\n"
+                            "    <!-- JS -->\n"
+                            "    <div>\n"
+                            "      <script type=\"text/javascript\"\n"
+                            "              src=\"assets/js/main.js\">\n"
+                            "      </script>\n"
+                            "    </div>\n"
+                            "  </body>\n"
+                            "</html>")
+          parsed-to-vector (html-parse
+                             string-to-parse)]
+      
+      (let [html-element (get
+                           parsed-to-vector
+                           3)
+            head-element (first
+                           (:content html-element))
+            title-element (get
+                            (:content head-element)
+                            2)
+            title-element-content (:content title-element)
+            title-element-content-first (first
+                                          title-element-content)]
+        
+        (is
+          (= title-element-content-first
+             "Sample")
+         )
+       
        )
       
      )
